@@ -5,11 +5,14 @@
 
 *Stateful · Context-grounded · Category-aware message composition*
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Gemini](https://img.shields.io/badge/Gemini-1.5_Pro-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
 [![Tests](https://img.shields.io/badge/Tests-17%2F17_passing-22c55e?style=flat-square)](#testing)
-[![Deploy](https://img.shields.io/badge/Deploy-Railway-7C3AED?style=flat-square&logo=railway&logoColor=white)](https://railway.app)
+[![Deploy](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
+[![Live](https://img.shields.io/badge/Live-API-22c55e?style=flat-square)](https://vera-magicpin-3quz.onrender.com/v1/healthz)
+
+**🟢 Live at:** [`https://vera-magicpin-3quz.onrender.com`](https://vera-magicpin-3quz.onrender.com/v1/healthz)
 
 </div>
 
@@ -25,6 +28,25 @@ judge sends context → Vera reads signals → Vera composes message → judge s
 ```
 
 Every message Vera writes must trace every fact to received context. No invented numbers. No generic templates. Each message is grounded in the exact merchant data, trigger signal, and customer profile the judge injected.
+
+---
+
+## 🟢 Live Endpoints
+
+| Endpoint | URL |
+|---|---|
+| Health | [`GET /v1/healthz`](https://vera-magicpin-3quz.onrender.com/v1/healthz) |
+| Metadata | [`GET /v1/metadata`](https://vera-magicpin-3quz.onrender.com/v1/metadata) |
+| Docs | [`/docs`](https://vera-magicpin-3quz.onrender.com/docs) |
+
+```bash
+# Verify live
+curl https://vera-magicpin-3quz.onrender.com/v1/healthz
+# {"status":"ok","version":"1.0.0",...}
+
+curl https://vera-magicpin-3quz.onrender.com/v1/metadata
+# {"name":"Vera","supported_categories":[...],...}
+```
 
 ---
 
@@ -94,8 +116,8 @@ Five dedicated system prompts, each encoding category-specific tone rules:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/YOUR_USERNAME/vera.git
-cd vera
+git clone https://github.com/YOUR_USERNAME/vera-magicpin.git
+cd vera-magicpin
 pip install -r requirements.txt
 
 # 2. Add your Gemini API key
@@ -183,8 +205,7 @@ Same version → `accepted: false` (no-op). Higher version → atomic replace.
   "compose": {
     "message": "Sending your ₹299 check-up offer to 190 nearby searchers now.",
     "intent_detected": "approved",
-    "handoff": false,
-    ...
+    "handoff": false
   }
 }
 ```
@@ -209,27 +230,28 @@ Intent classes: `approved` · `objection_price` · `objection_timing` · `object
 
 ---
 
-## Deploy to Railway
+## Deploy
+
+### Render (Docker — recommended)
 
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
+# render.yaml already included in repo
+# Just connect repo on render.com → New Web Service → select repo
+# Render auto-detects Dockerfile
 
-# Deploy
-cd vera
-railway login
-railway init
-railway up
-
-# Set environment variables
-railway variables set GEMINI_API_KEY=AIza...your_key_here
-railway variables set GEMINI_MODEL=gemini-1.5-pro
-
-# Get your public URL
-railway open
+# Set environment variables in Render dashboard:
+# GEMINI_API_KEY = AIza...your_key
+# GEMINI_MODEL   = gemini-1.5-pro
 ```
 
-Your bot URL: `https://vera-production-xxxx.up.railway.app`
+> ⚠️ Render free tier sleeps after 15 min inactivity. Use [cron-job.org](https://cron-job.org) to ping `/v1/healthz` every 10 minutes during judging.
+
+### Local / Docker
+
+```bash
+docker build -t vera .
+docker run -p 8000:8000 -e GEMINI_API_KEY=AIza... vera
+```
 
 ---
 
@@ -260,18 +282,22 @@ Test coverage: health endpoints · context store versioning · tick composition 
 
 ## Key Design Decisions
 
-**Rationale-first prompting.** The system prompt forces Gemini to write `rationale` before `message`. This is the single most important design decision — it forces grounded decision-making before any text generation, directly improving Decision Quality scores.
+**Rationale-first prompting.** The system prompt forces Gemini to write `rationale` before `message`. This forces grounded decision-making before any text generation, directly improving Decision Quality scores.
 
-**Deterministic routing, LLM composition.** The SignalRouter is pure Python with no LLM calls. It deterministically identifies the strongest signal, selects the best offer, and resolves all metadata. The LLM only handles the final language generation step — making the system predictable and debuggable.
+**Deterministic routing, LLM composition.** The SignalRouter is pure Python with no LLM calls. It deterministically identifies the strongest signal, selects the best offer, and resolves all metadata. The LLM only handles the final language generation — making the system predictable and debuggable.
 
-**Python-side specificity enforcement.** Rather than trusting LLM temperature to include exact numbers, Vera verifies in code that critical figures appear in the output and retries with a correction prompt if they don't.
+**Python-side specificity enforcement.** Vera verifies in code that critical figures appear in the output and retries with a correction prompt if they don't — independent of LLM temperature.
 
 **Dual-mode store.** In-memory by default (zero config), Redis drop-in for production (set `REDIS_URL`).
+
+**Docker deployment.** Pinned to `python:3.11-slim` via Dockerfile — avoids platform Python version issues entirely.
 
 ---
 
 <div align="center">
 
 Built for the **Magicpin AI Challenge 2026**
+
+🟢 **Live:** [`vera-magicpin-3quz.onrender.com`](https://vera-magicpin-3quz.onrender.com/v1/healthz)
 
 </div>
