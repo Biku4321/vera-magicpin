@@ -12,7 +12,7 @@ import json
 import sys
 import httpx
 
-BASE = "http://localhost:8000"
+BASE = "https://vera-magicpin-3quz.onrender.com"
 
 
 def ok(label: str, r: httpx.Response):
